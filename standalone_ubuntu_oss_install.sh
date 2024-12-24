@@ -105,7 +105,7 @@ if [ ! -f /usr/share/keyrings/nginx-archive-keyring.gpg ]; then
   echo "▶ Adding NGINX signing key"
   key_tmp_file="$(mktemp)"
   wget --quiet --max-redirect=3 --output-document="${key_tmp_file}" https://nginx.org/keys/nginx_signing.key
-  echo "dd4da5dc599ef9e7a7ac20a87275024b4923a917a306ab5d53fa77871220ecda  ${key_tmp_file}" | sha256sum --check
+  echo "55385da31d198fa6a5012d40ae98ecb272a6c4e8fffffba94719ffd3e87de37a  ${key_tmp_file}" | sha256sum --check
   gpg --dearmor < "${key_tmp_file}" | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
   rm -f "${key_tmp_file}"
 fi
