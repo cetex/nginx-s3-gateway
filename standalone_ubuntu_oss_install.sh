@@ -185,6 +185,8 @@ CORS_ENABLED=${CORS_ENABLED:-'false'}
 STRIP_LEADING_DIRECTORY_PATH=${STRIP_LEADING_DIRECTORY_PATH:-''}
 # Configure portion of URL to be added to the beginning of the requested path (optional)
 PREFIX_LEADING_DIRECTORY_PATH=${PREFIX_LEADING_DIRECTORY_PATH:-''}
+# Worker connecctions
+WORKER_CONNECTIONS=${WORKER_CONNECTIONS:-'1024'}
 EOF
 
 # By enabling CORS, we also need to enable the OPTIONS method which
@@ -316,10 +318,11 @@ chmod +x /usr/local/bin/template_nginx_config.sh
 
 echo "▶ Reconfiguring systemd for S3 Gateway"
 mkdir -p /etc/systemd/system/nginx.service.d
-cat > /etc/systemd/system/nginx.service.d/override.conf << 'EOF'
+cat > /etc/systemd/system/nginx.service.d/override.conf << EOF
 [Service]
 EnvironmentFile=/etc/nginx/environment
 ExecStartPre=/usr/local/bin/template_nginx_config.sh
+LimitNOFILE=$(( ${WORKER_CONNECTIONS} * 2 ))
 EOF
 systemctl daemon-reload
 
@@ -368,7 +371,7 @@ EOF
   fi
 fi
 
-cat >> /etc/nginx/nginx.conf << 'EOF'
+cat >> /etc/nginx/nginx.conf << EOF
 env S3_BUCKET_NAME;
 env S3_SERVER;
 env S3_SERVER_PORT;
@@ -381,10 +384,12 @@ env S3_SERVICE;
 env ALLOW_DIRECTORY_LIST;
 
 events {
-    worker_connections  1024;
+    worker_connections  ${WORKER_CONNECTIONS:-'1024'};
 }
 
+EOF
 
+cat >> /etc/nginx/nginx.conf << 'EOF'
 http {
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
