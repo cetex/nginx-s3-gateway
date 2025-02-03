@@ -1,6 +1,8 @@
 js_import /etc/nginx/include/awscredentials.js;
 js_import /etc/nginx/include/s3gateway.js;
 
+client_max_body_size 0;
+client_body_in_file_only clean;
 
 # We include only the variables needed for the authentication signatures that
 # we plan to use.
