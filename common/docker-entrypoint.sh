@@ -57,11 +57,11 @@ export CORS_ENABLED="$(parseBoolean "${CORS_ENABLED}")"
 # is not normally used as part of the gateway. The following variable
 # defines the set of acceptable headers.
 if [ "${CORS_ENABLED}" == "1" ]; then
-  export LIMIT_METHODS_TO="GET HEAD OPTIONS"
-  export LIMIT_METHODS_TO_CSV="GET, HEAD, OPTIONS"
+  export LIMIT_METHODS_TO=${LIMIT_METHODS_TO:-"GET HEAD OPTIONS"}
+  export LIMIT_METHODS_TO_CSV=${LIMIT_METHODS_TO_CSV:-"GET, HEAD, OPTIONS"}
 else
-  export LIMIT_METHODS_TO="GET HEAD"
-  export LIMIT_METHODS_TO_CSV="GET, HEAD"
+  export LIMIT_METHODS_TO=${LIMIT_METHODS_TO:-"GET HEAD"}
+  export LIMIT_METHODS_TO_CSV=${LIMIT_METHODS_TO:-"GET, HEAD"}
 fi
 
 if [ -z "${CORS_ALLOWED_ORIGIN+x}" ]; then
@@ -73,27 +73,6 @@ fi
 if [ "${CORS_ALLOW_PRIVATE_NETWORK_ACCESS}" != "true" ] && [ "${CORS_ALLOW_PRIVATE_NETWORK_ACCESS}" != "false" ]; then
   export CORS_ALLOW_PRIVATE_NETWORK_ACCESS=""  
 fi
-
-# This is the primary logic to determine the s3 host used for the
-# upstream (the actual proxying action) as well as the `Host` header
-#
-# It is currently slightly more complex than necessary because we are transitioning
-# to a new logic which is defined by "virtual-v2". "virtual-v2" is the recommended setting
-# for all deployments.
-
-# S3_UPSTREAM needs the port specified. The port must
-# correspond to https/http in the proxy_pass directive.
-if [ "${S3_STYLE}" == "virtual-v2" ]; then
-  export S3_UPSTREAM="${S3_BUCKET_NAME}.${S3_SERVER}:${S3_SERVER_PORT}"
-  export S3_HOST_HEADER="${S3_BUCKET_NAME}.${S3_SERVER}:${S3_SERVER_PORT}"
-elif [ "${S3_STYLE}" == "path" ]; then
-  export S3_UPSTREAM="${S3_SERVER}:${S3_SERVER_PORT}"
-  export S3_HOST_HEADER="${S3_SERVER}:${S3_SERVER_PORT}"
-else
-  export S3_UPSTREAM="${S3_SERVER}:${S3_SERVER_PORT}"
-  export S3_HOST_HEADER="${S3_BUCKET_NAME}.${S3_SERVER}"
-fi
-
 
 # Nothing is modified under this line
 

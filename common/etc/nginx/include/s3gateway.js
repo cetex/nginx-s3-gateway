@@ -32,11 +32,6 @@ import awssig2 from "./awssig2.js";
 import awssig4 from "./awssig4.js";
 import utils from "./utils.js";
 
-_requireEnvVars('S3_BUCKET_NAME');
-_requireEnvVars('S3_SERVER');
-_requireEnvVars('S3_SERVER_PROTO');
-_requireEnvVars('S3_SERVER_PORT');
-_requireEnvVars('S3_REGION');
 _requireEnvVars('AWS_SIGS_VERSION');
 _requireEnvVars('S3_STYLE');
 
@@ -193,8 +188,8 @@ function s3date(r) {
  * @returns {string} AWS authentication signature
  */
 function s3auth(r) {
-    const bucket = process.env['S3_BUCKET_NAME'];
-    const region = process.env['S3_REGION'];
+    const bucket = r.variables.bucket;
+    const region = r.variables.region;
     const host = r.variables.s3_host;
     const sigver = process.env['AWS_SIGS_VERSION'];
 
@@ -282,7 +277,7 @@ function _s3ReqParamsForSigV4(r, bucket, host) {
  * @returns {string} start of the file path for the S3 object URI
  */
 function s3BaseUri(r) {
-    const bucket = process.env['S3_BUCKET_NAME'];
+    const bucket = r.variables.bucket;
     let basePath;
 
     if (S3_STYLE === 'path') {
@@ -359,20 +354,11 @@ function _s3DirQueryParams(uriPath, method) {
 }
 
 /**
- * Redirects the request to the appropriate location. If the request is not
- * a read (GET/HEAD) request, then we reject the request outright by returning
- * a HTTP 405 error with a list of allowed methods.
+ * Redirects the request to the appropriate location.
  *
  * @param r {NginxHTTPRequest} HTTP request object
  */
 function redirectToS3(r) {
-    // This is a read-only S3 gateway, so we do not support any other methods
-    if (!(r.method === 'GET' || r.method === 'HEAD')) {
-        utils.debug_log(r, 'Invalid method requested: ' + r.method);
-        r.internalRedirect("@error405");
-        return;
-    }
-
     const uriPath = r.variables.uri_path;
     const isDirectoryListing = ALLOW_LISTING && _isDirectory(uriPath);
 

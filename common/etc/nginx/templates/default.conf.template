@@ -6,11 +6,21 @@ js_import /etc/nginx/include/s3gateway.js;
 # we plan to use.
 include /etc/nginx/conf.d/gateway/v${AWS_SIGS_VERSION}_js_vars.conf;
 
-# Extracts only the path from the requested URI. This strips out all query
-# parameters and anchors in order to prevent extraneous data from being sent
-# to S3.
+# Extracts the first part of the path to $bucket
+map $request_uri $region {
+	"~^/([^/]+).*$"  $1;
+}
+
+# Extracts the first part of the path to $bucket
+map $request_uri $bucket {
+	"~^/([^/]+)/([^/]+)(/.*)*$"  $2;
+}
+
+# Extracts only the path minus the first 2 directories from the requested URI. 
+# This strips out all query parameters and anchors in order to prevent 
+# extraneous data from being sentto S3.
 map $request_uri $uri_full_path {
-    "~^(?P<path>.*?)(\?.*)*$"  $path;
+    "~^/([^/]+)/([^/]+)(?P<path>.*?)(\?.*)*$"  $path;
 }
 
 # Remove/replace a portion of request URL (if configured)
@@ -19,10 +29,9 @@ map $uri_full_path $uri_path {
     default $PREFIX_LEADING_DIRECTORY_PATH$uri_full_path;
 }
 
-# S3_HOST_HEADER is set in the startup script
-# (either ./common/docker-entrypoint.sh or ./standalone_ubuntu_oss_install.sh)
-# based on the S3_STYLE configuration option.
-js_var $s3_host ${S3_HOST_HEADER};
+
+# s3 host header is set from request_uri.
+js_var $s3_host "$bucket.s3.$region.amazonaws.com";
 
 js_var $indexIsEmpty true;
 js_var $forIndexPage true;
@@ -133,7 +142,7 @@ server {
 
         # Enable passing of the server name through TLS Server Name Indication extension.
         proxy_ssl_server_name on;
-        proxy_ssl_name ${S3_SERVER};
+        proxy_ssl_name $s3_host;
 
         # Set the Authorization header to the AWS Signatures credentials
         proxy_set_header Authorization $s3auth;
@@ -194,7 +203,7 @@ server {
 
         # Enable passing of the server name through TLS Server Name Indication extension.
         proxy_ssl_server_name on;
-        proxy_ssl_name ${S3_SERVER};
+        proxy_ssl_name $s3_host;
 
         # Set the Authorization header to the AWS Signatures credentials
         proxy_set_header Authorization $s3auth;
@@ -233,7 +242,8 @@ server {
         # Comment out this line to receive the error messages returned by S3
         error_page 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 416 417 418 420 422 423 424 426 428 429 431 444 449 450 451 500 501 502 503 504 505 506 507 508 509 510 511 =404 @error404;
 
-        proxy_pass  ${S3_SERVER_PROTO}://storage_urls$s3Uri;
+        resolver ${DNS_RESOLVERS};
+        proxy_pass ${S3_SERVER_PROTO}://$s3_host$s3uri;
         include /etc/nginx/conf.d/gateway/s3listing_location.conf;
     }
 
@@ -257,7 +267,7 @@ server {
 
         # Enable passing of the server name through TLS Server Name Indication extension.
         proxy_ssl_server_name on;
-        proxy_ssl_name ${S3_SERVER};
+        proxy_ssl_name $s3_host;
 
         # Set the Authorization header to the AWS Signatures credentials
         proxy_set_header Authorization $s3auth;
@@ -281,8 +291,8 @@ server {
 
         # Comment out this line to receive the error messages returned by S3
         error_page 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 416 417 418 420 422 423 424 426 428 429 431 444 449 450 451 500 501 502 503 504 505 506 507 508 509 510 511 =404 @error404;
-
-        proxy_pass  ${S3_SERVER_PROTO}://storage_urls$s3uri;
+        resolver ${DNS_RESOLVERS};
+        proxy_pass ${S3_SERVER_PROTO}://$s3_host$s3uri;
         include /etc/nginx/conf.d/gateway/s3listing_location.conf;
     }
 

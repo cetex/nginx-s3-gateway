@@ -22,9 +22,8 @@ set -e
 
 failed=0
 
-required=("S3_BUCKET_NAME" "S3_SERVER" "S3_SERVER_PORT" "S3_SERVER_PROTO"
-"S3_REGION" "S3_STYLE" "ALLOW_DIRECTORY_LIST" "AWS_SIGS_VERSION"
-"CORS_ENABLED")
+required=("S3_SERVER_PORT" "S3_SERVER_PROTO" "S3_STYLE" "ALLOW_DIRECTORY_LIST"
+"AWS_SIGS_VERSION" "CORS_ENABLED")
 
 # Require some form of authentication to be configured.
 
@@ -124,8 +123,6 @@ fi
 echo "S3 Backend Environment"
 echo "Service: ${S3_SERVICE:-s3}"
 echo "Access Key ID: ${AWS_ACCESS_KEY_ID}"
-echo "Origin: ${S3_SERVER_PROTO}://${S3_BUCKET_NAME}.${S3_SERVER}:${S3_SERVER_PORT}"
-echo "Region: ${S3_REGION}"
 echo "Addressing Style: ${S3_STYLE}"
 echo "AWS Signatures Version: v${AWS_SIGS_VERSION}"
 echo "DNS Resolvers: ${DNS_RESOLVERS}"

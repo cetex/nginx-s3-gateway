@@ -30,8 +30,7 @@ fi
 
 failed=0
 
-required=("S3_BUCKET_NAME" "S3_SERVER" "S3_SERVER_PORT" "S3_SERVER_PROTO"
-"S3_REGION" "S3_STYLE" "ALLOW_DIRECTORY_LIST" "AWS_SIGS_VERSION")
+required=("S3_SERVER_PORT" "S3_SERVER_PROTO" "S3_STYLE" "ALLOW_DIRECTORY_LIST" "AWS_SIGS_VERSION")
 
 if [ ! -z ${AWS_CONTAINER_CREDENTIALS_RELATIVE_URI+x} ]; then
   echo "Running inside an ECS task, using container credentials"
@@ -73,6 +72,8 @@ if [ $failed -gt 0 ]; then
   exit 1
 fi
 
+repo=${GIT_REPO:-"nginxinc/nginx-s3-gateway"}
+
 if [ "${1}" == "" ]; then
   branch="master"
 else
@@ -83,8 +84,6 @@ echo "Installing using github '${branch}' branch"
 
 echo "S3 Backend Environment"
 echo "Access Key ID: ${AWS_ACCESS_KEY_ID}"
-echo "Origin: ${S3_SERVER_PROTO}://${S3_BUCKET_NAME}.${S3_SERVER}:${S3_SERVER_PORT}"
-echo "Region: ${S3_REGION}"
 echo "Addressing Style: ${S3_STYLE}"
 echo "AWS Signatures Version: v${AWS_SIGS_VERSION}"
 echo "DNS Resolvers: ${DNS_RESOLVERS}"
@@ -151,16 +150,10 @@ ALLOW_DIRECTORY_LIST=${ALLOW_DIRECTORY_LIST:-'false'}
 DIRECTORY_LISTING_PATH_PREFIX=${DIRECTORY_LISTING_PATH_PREFIX:-''}
 # AWS Authentication signature version (2=v2 authentication, 4=v4 authentication)
 AWS_SIGS_VERSION=${AWS_SIGS_VERSION}
-# Name of S3 bucket to proxy requests to
-S3_BUCKET_NAME=${S3_BUCKET_NAME}
-# Region associated with API
-S3_REGION=${S3_REGION}
 # SSL/TLS port to connect to
 S3_SERVER_PORT=${S3_SERVER_PORT}
 # Protocol to used connect to S3 server - 'http' or 'https'
 S3_SERVER_PROTO=${S3_SERVER_PROTO}
-# S3 host to connect to
-S3_SERVER=${S3_SERVER}
 # The S3 host/path method - 'virtual', 'path' or 'default'
 S3_STYLE=${S3_STYLE:-'default'}
 # Name of S3 service - 's3' or 's3express'
@@ -202,32 +195,6 @@ else
     cat >> "/etc/nginx/environment" << EOF
 LIMIT_METHODS_TO="GET HEAD"
 LIMIT_METHODS_TO_CSV="GET, HEAD"
-EOF
-fi
-
-# This is the primary logic to determine the s3 host used for the
-# upstream (the actual proxying action) as well as the `Host` header
-#
-# It is currently slightly more complex than necessary because we are transitioning
-# to a new logic which is defined by "virtual-v2". "virtual-v2" is the recommended setting
-# for all deployments.
-
-# S3_UPSTREAM needs the port specified. The port must
-# correspond to https/http in the proxy_pass directive.
-if [ "${S3_STYLE}" == "virtual-v2" ]; then
-  cat >> "/etc/nginx/environment" << EOF
-S3_UPSTREAM="${S3_BUCKET_NAME}.${S3_SERVER}:${S3_SERVER_PORT}"
-S3_HOST_HEADER="${S3_BUCKET_NAME}.${S3_SERVER}:${S3_SERVER_PORT}"
-EOF
-elif [ "${S3_STYLE}" == "path" ]; then
-  cat >> "/etc/nginx/environment" << EOF
-S3_UPSTREAM="${S3_SERVER}:${S3_SERVER_PORT}"
-S3_HOST_HEADER="${S3_SERVER}:${S3_SERVER_PORT}"
-EOF
-else
-  cat >> "/etc/nginx/environment" << EOF
-S3_UPSTREAM="${S3_SERVER}:${S3_SERVER_PORT}"
-S3_HOST_HEADER="${S3_BUCKET_NAME}.${S3_SERVER}"
 EOF
 fi
 
@@ -332,7 +299,7 @@ mkdir -p /etc/nginx/conf.d/gateway
 mkdir -p /etc/nginx/templates/gateway
 
 function download() {
-  wget --quiet --output-document="$2" "https://raw.githubusercontent.com/nginxinc/nginx-s3-gateway/${branch}/$1"
+  wget --quiet --output-document="$2" "https://raw.githubusercontent.com/${repo}/${branch}/$1"
 }
 
 if [ ! -f /etc/nginx/nginx.conf.orig ]; then
@@ -372,11 +339,8 @@ EOF
 fi
 
 cat >> /etc/nginx/nginx.conf << EOF
-env S3_BUCKET_NAME;
-env S3_SERVER;
 env S3_SERVER_PORT;
 env S3_SERVER_PROTO;
-env S3_REGION;
 env AWS_SIGS_VERSION;
 env DEBUG;
 env S3_STYLE;

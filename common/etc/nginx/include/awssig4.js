@@ -21,6 +21,7 @@
 
 import awscred from "./awscredentials.js";
 import utils   from "./utils.js";
+const fs = require('fs');
 
 const mod_hmac = require('crypto');
 
@@ -274,7 +275,7 @@ function awsHeaderDate(_r) {
  * @returns {string} payload hash
  */
 function awsHeaderPayloadHash(r) {
-    const reqBody = r.variables.request_body ? r.variables.request_body: '';
+    const reqBody = r.variables.request_body ? r.variables.request_body: r.variables.request_body_file ? fs.readFileSync(r.variables.request_body_file): '';
     const payloadHash = mod_hmac.createHash('sha256', 'utf8')
         .update(reqBody)
         .digest('hex');
