@@ -393,7 +393,6 @@ download "common/etc/nginx/templates/gateway/s3listing_location.conf.template" "
 download "common/etc/nginx/templates/gateway/s3_location.conf.template" "/etc/nginx/templates/gateway/s3_location.conf.template"
 download "common/etc/nginx/templates/gateway/s3_server.conf.template" "/etc/nginx/templates/gateway/s3_server.conf.template"
 download "common/etc/nginx/templates/gateway/s3_location_common.conf.template" "/etc/nginx/templates/gateway/s3_location_common.conf.template"
-download "oss/etc/nginx/templates/upstreams.conf.template" "/etc/nginx/templates/upstreams.conf.template"
 download "oss/etc/nginx/conf.d/gateway/server_variables.conf" "/etc/nginx/conf.d/gateway/server_variables.conf"
 
 echo "▶ Creating directory for proxy cache"
