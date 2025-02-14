@@ -231,19 +231,6 @@ EOF
   fi
 fi
 
-set +o nounset   # don't abort on unbound variable
-if [ -z ${DNS_RESOLVERS+x} ]; then
-  cat >> "/etc/default/nginx" << EOF
-# DNS resolvers (separated by single spaces) to configure NGINX with
-DNS_RESOLVERS=${DNS_RESOLVERS}
-EOF
-fi
-set -o nounset   # abort on unbound variable
-
-# Make sure that only the root user can access the environment variables file
-chown root:root /etc/nginx/environment
-chmod og-rwx /etc/nginx/environment
-
 cat > /usr/local/bin/template_nginx_config.sh << 'EOF'
 #!/usr/bin/env bash
 
